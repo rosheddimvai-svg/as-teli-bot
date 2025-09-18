@@ -12,7 +12,7 @@ PRIVATE_CHANNEL_ID = -1002323042564
 PUBLIC_CHANNEL_LINK = "https://t.me/cpa_marketing_99"
 OWNER_USERNAME = "@Rs_Rezaul_99"
 PORT = 8080
-WEBHOOK_URL = "https://dkwin12.com/#/saasLottery/WinGo?gameCode=WinGo_30S&lottery=Win" # Replace with your Render URL
+WEBHOOK_URL = "https://your-app-name.onrender.com/" # Replace with your Render URL
 
 # Set up logging for better error tracking
 logging.basicConfig(
@@ -75,4 +75,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
