@@ -73,7 +73,3 @@ async def main() -> None:
 if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
-```eof
-```markdown:Required Libraries:requirements.txt
-python-telegram-bot
-```eof
