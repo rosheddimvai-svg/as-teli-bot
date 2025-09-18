@@ -4,15 +4,14 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, ContextTypes
-from telegram.constants import ParseMode
 
 # Your bot's secret information
+# For Render deployment, it is safer to use environment variables.
+# However, as per your request, the values are hardcoded here.
 BOT_TOKEN = "8197222627:AAGjX1XrAqlNnpMYpjSKjA4yOisfeTJbQEk"
 PRIVATE_CHANNEL_ID = -1002323042564
 PUBLIC_CHANNEL_LINK = "https://t.me/cpa_marketing_99"
 OWNER_USERNAME = "@Rs_Rezaul_99"
-PORT = 8080
-WEBHOOK_URL = "https://your-app-name.onrender.com/" # Replace with your Render URL
 
 # Set up logging for better error tracking
 logging.basicConfig(
@@ -26,6 +25,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     """Handles the /start command and checks for channel membership."""
     user = update.effective_user
     
+    # Since get_chat_member can raise an error if the user is not in the channel,
+    # we use a try-except block to handle it gracefully.
     try:
         member = await context.bot.get_chat_member(chat_id=PRIVATE_CHANNEL_ID, user_id=user.id)
         
@@ -47,7 +48,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 "নিচের 'ওপেন হ্যাক' বাটনে ক্লিক করে আপনি আমাদের বিশেষ সুবিধাগুলো উপভোগ করতে পারবেন।"
             )
             
-            await update.message.reply_text(welcome_message, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+            await update.message.reply_text(welcome_message, reply_markup=reply_markup)
         else:
             raise Exception("User is not a member.")
 
@@ -57,21 +58,22 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             "আপনি আমাদের ভিআইপি মেম্বার নন। এই বিশেষ সুবিধাটি শুধুমাত্র আমাদের টিমের সদস্যদের জন্য সংরক্ষিত।\n\n"
             "এই হ্যাক ব্যবহার করতে চাইলে, অনুগ্রহ করে টিমে যোগ দিন।"
         )
-        await update.message.reply_text(access_denied_message, parse_mode=ParseMode.HTML)
+        await update.message.reply_text(access_denied_message)
 
-def main() -> None:
-    """Starts the bot using webhooks for Render deployment."""
+async def main() -> None:
+    """Starts the bot."""
     application = Application.builder().token(BOT_TOKEN).build()
 
+    # Add command handlers
     application.add_handler(CommandHandler("start", start_command))
 
-    # Run the bot using webhooks
-    application.run_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=BOT_TOKEN,
-        webhook_url=WEBHOOK_URL + BOT_TOKEN
-    )
+    # Run the bot until the user presses Ctrl-C
+    await application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(main())
+```eof
+```markdown:Required Libraries:requirements.txt
+python-telegram-bot
+```eof
