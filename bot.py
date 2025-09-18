@@ -31,13 +31,11 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         member = await context.bot.get_chat_member(chat_id=PRIVATE_CHANNEL_ID, user_id=user.id)
         
         if member.status in ['member', 'administrator', 'creator']:
+            # Create a simple button for the website link
             keyboard = [
                 [
-                    InlineKeyboardButton("ওপেন হ্যাক", web_app=WebAppInfo(url="https://as-official-channel.netlify.app/")),
+                    InlineKeyboardButton("ওপেন হ্যাক", url="https://as-official-channel.netlify.app/"),
                     InlineKeyboardButton("ওনারের সাথে যোগাযোগ", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}")
-                ],
-                [
-                    InlineKeyboardButton("আমাদের পাবলিক গ্রুপ", url=PUBLIC_CHANNEL_LINK)
                 ]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
