@@ -69,8 +69,8 @@ async def main() -> None:
     # Add command handlers
     application.add_handler(CommandHandler("start", start_command))
 
-    # Run the bot in a way that is compatible with web hosting services
-    await application.run_forever()
+    # Run the bot until the user presses Ctrl-C
+    await application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     import asyncio
