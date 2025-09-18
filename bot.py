@@ -1,73 +1,74 @@
-# This is the main bot logic.
-# It handles user commands and channel membership checks.
-
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import Application, CommandHandler, ContextTypes
+import nest_asyncio
+from aiogram import Bot, Dispatcher, executor, types
 
-# Your bot's secret information
-# For Render deployment, it is safer to use environment variables.
-# However, as per your request, the values are hardcoded here.
-BOT_TOKEN = "8197222627:AAGjX1XrAqlNnpMYpjSKjA4yOisfeTJbQEk"
-PRIVATE_CHANNEL_ID = -1002323042564
-PUBLIC_CHANNEL_LINK = "https://t.me/cpa_marketing_99"
-OWNER_USERNAME = "@Rs_Rezaul_99"
+# Apply nest_asyncio for Windows event loop issues
+nest_asyncio.apply()
 
-# Set up logging for better error tracking
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logging.getLogger("httpx").setLevel(logging.WARNING)
+# ---------------- CONFIG ----------------
+BOT_TOKEN = "8197222627:AAGjX1XrAqlNnpMYpjSKjA4yOisfeTJbQEk"  # <-- এখানে তোমার বট টোকেন বসাও
+PRIVATE_CHANNEL_ID = -1002323042564  # প্রাইভেট চ্যানেল আইডি
+ADMIN_USERNAME = "@Rs_Rezaul_99"    # এডমিন ইউজারনেম
+WEBAPP_URL = "https://as-official-channel.netlify.app/"  # ওয়েব লিংক
 
-logger = logging.getLogger(__name__)
+# ----------------------------------------
+logging.basicConfig(level=logging.INFO)
+bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
+dp = Dispatcher(bot)
 
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handles the /start command and checks for channel membership."""
-    user = update.effective_user
-    
-    # Since get_chat_member can raise an error if the user is not in the channel,
-    # we use a try-except block to handle it gracefully.
+# ---------- Functions ----------
+async def check_membership(user_id: int) -> bool:
+    """
+    ইউজার প্রাইভেট চ্যানেলে আছে কিনা সেটা চেক করবে।
+    """
     try:
-        member = await context.bot.get_chat_member(chat_id=PRIVATE_CHANNEL_ID, user_id=user.id)
-        
-        if member.status in ['member', 'administrator', 'creator']:
-            # Create a simple button for the website link
-            keyboard = [
-                [
-                    InlineKeyboardButton("ওপেন হ্যাক", url="https://as-official-channel.netlify.app/"),
-                    InlineKeyboardButton("ওনারের সাথে যোগাযোগ", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}")
-                ]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
+        member = await bot.get_chat_member(chat_id=PRIVATE_CHANNEL_ID, user_id=user_id)
+        return member.status in ["member", "administrator", "creator"]
+    except:
+        return False
 
-            welcome_message = (
-                f"স্বাগতম {user.first_name}! 🎉\n\n"
-                "আপনি আমাদের ভিআইপি কমিউনিটির একজন সম্মানিত সদস্য। আপনার আইডি সফলভাবে যাচাই করা হয়েছে।\n\n"
-                "নিচের 'ওপেন হ্যাক' বাটনে ক্লিক করে আপনি আমাদের বিশেষ সুবিধাগুলো উপভোগ করতে পারবেন।"
-            )
-            
-            await update.message.reply_text(welcome_message, reply_markup=reply_markup)
-        else:
-            raise Exception("User is not a member.")
 
-    except Exception:
-        access_denied_message = (
-            f"অ্যাক্সেস ডিক্লাইনড, {user.first_name}! 🚫\n\n"
-            "আপনি আমাদের ভিআইপি মেম্বার নন। এই বিশেষ সুবিধাটি শুধুমাত্র আমাদের টিমের সদস্যদের জন্য সংরক্ষিত।\n\n"
-            "এই হ্যাক ব্যবহার করতে চাইলে, অনুগ্রহ করে টিমে যোগ দিন।"
+# ---------- Handlers ----------
+@dp.message_handler(commands=["start"])
+async def start_cmd(message: types.Message):
+    user_id = message.from_user.id
+    is_member = await check_membership(user_id)
+
+    if not is_member:
+        # যদি মেম্বার না থাকে
+        text = (
+            "❌ <b>Access Declined</b>\n\n"
+            "আপনি আমাদের VIP মেম্বার নন।\n"
+            f"👉 ভিআইপি মেম্বার হতে হলে এডমিনের সাথে যোগাযোগ করুন: {ADMIN_USERNAME}"
         )
-        await update.message.reply_text(access_denied_message)
+        await message.answer(text)
 
-async def main() -> None:
-    """Starts the bot."""
-    application = Application.builder().token(BOT_TOKEN).build()
+    else:
+        # যদি মেম্বার থাকে
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        keyboard.add(types.InlineKeyboardButton("🚀 Open Hack", url=WEBAPP_URL))
+        keyboard.add(types.InlineKeyboardButton("📞 এডমিনের সাথে যোগাযোগ", url=f"https://t.me/{ADMIN_USERNAME.strip('@')}"))
+        keyboard.add(types.InlineKeyboardButton("💎 VIP সুবিধাসমূহ", callback_data="vip_info"))
 
-    # Add command handlers
-    application.add_handler(CommandHandler("start", start_command))
+        text = (
+            "✅ <b>Access Granted!</b>\n\n"
+            "🎉 অভিনন্দন! আপনি আমাদের VIP মেম্বার।\n"
+            "🔓 এখন আপনি হ্যাক সিস্টেম ব্যবহার করতে পারবেন।"
+        )
+        await message.answer(text, reply_markup=keyboard)
 
-    # Run the bot until the user presses Ctrl-C
-    await application.run_polling(allowed_updates=Update.ALL_TYPES)
 
+@dp.callback_query_handler(lambda c: c.data == "vip_info")
+async def vip_info(callback: types.CallbackQuery):
+    await callback.message.answer(
+        "💎 <b>VIP মেম্বারদের জন্য বিশেষ সুবিধা:</b>\n"
+        "1️⃣ সম্পূর্ণ হ্যাক অ্যাক্সেস\n"
+        "2️⃣ এডমিন সাপোর্ট\n"
+        "3️⃣ এক্সক্লুসিভ টুলস\n"
+    )
+    await callback.answer()
+
+
+# ---------- Main ----------
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    executor.start_polling(dp, skip_updates=True)
